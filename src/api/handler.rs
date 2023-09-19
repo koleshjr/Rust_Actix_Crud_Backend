@@ -1,22 +1,21 @@
+
 use crate::{
-    model::NoteModel,
-    schema::{CreateNoteSchema, FilterOptions, UpdateNoteSchema},
+    repository::model::NoteModel,
+    api::schema::{CreateNoteSchema, FilterOptions, UpdateNoteSchema},
     AppState,
 };
  use actix_web::{delete, get, patch, post, web, HttpResponse, Responder};
  use chrono::prelude::*;
  use serde_json::json;
 
- /*Fetch all records: READ operation 
- Will have a pagination feature where users can select a range of records in the database
- If the user fails to provide the limit and page query params in the URL, the
- function will only return the first 10 records
+//COMMENTS and explanations
+// 1. The #[get("/healthchecker")] attribute is used to define the route for the health_checker_handler function which will be used to check the status of the API
+#[get("/healthchecker")]
+async fn health_checker_handler() -> impl Responder {
+    const MESSAGE: &str = "Build a simple CRUD API with Rust, SQLX, Postgres, and Actix Web";
+    HttpResponse::Ok().json(json!({"status": "success", "message": MESSAGE}))
+}
 
- To retrieve a specific number of records from the table, we will use the OFFSET and LIMIT clauses along
- with SELECT statement 
- The OFFSET clause will specify the no of rows to skip, whereas the LIMIT clause will specify the max no of
- rows to return
- */
 
  #[get("/notes")]
  pub async fn note_list_handler(
@@ -28,12 +27,14 @@ use crate::{
 
     let query_result = sqlx::query_as! (
         NoteModel,
-        "SELECT * FROM notes by id LIMIT $1 OFFSET $2",
+        "SELECT * FROM notes ORDER by id LIMIT $1 OFFSET $2",
         limit as i32,
         offset as i32,
     )
     .fetch_all(&data.db) //use to retrieve the rows of the query and map the returned data to the NoteModel struct
     .await;
+
+
 
     // if the query fails a 500 internal server error will be sent to the client
     if query_result.is_err(){
@@ -90,7 +91,7 @@ use crate::{
                 }
 
                 return HttpResponse::BadRequest()
-                .json(serde_json::json!({"status": "error", "message": format! ("{:?)", e)}));
+                .json(serde_json::json!({"status": "error", "message": format! ("{:?}", e)}));
         }
     }
  }
